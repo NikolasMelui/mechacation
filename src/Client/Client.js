@@ -24,36 +24,66 @@ class Client {
     this.serviceFilePath = path.resolve(this.secretsPath, 'service.json');
     this.tokenFilePath = path.resolve(this.secretsPath, 'token.json');
     this.scope = clientConfig.scope;
+    this.client = null;
   }
 
   /**
-   * @name init
+   * @name oAuth2ClientInit
    * @type method
-   * @description Initialize the instance of the application
+   * @description Initialize the oAuth2Client of the instance
    */
-  async init() {
+  async oAuth2ClientInit() {
     try {
       const credentials = await this.getFileData(this.credentialsFilePath);
 
       const { client_id, client_secret, redirect_uris } = credentials.installed;
 
-      this.oAuth2Client = new google.auth.OAuth2(
+      this.client = new google.auth.OAuth2(
         client_id,
         client_secret,
         redirect_uris[0],
       );
 
+      this.modulesInit();
+    } catch (error) {
+      console.error('Error gettin the credentials:\n', error);
+    }
+  }
+
+  /**
+   * @name serviceClientInit
+   * @type method
+   * @description Initialize the ServiceClient of the instance
+   */
+  async serviceClientInit() {
+    try {
+      // TODO: Service client init
+      this.client = null;
+
+      this.modulesInit();
+    } catch (error) {
+      console.error('Error gettin the credentials:\n', error);
+    }
+  }
+
+  /**
+   * @name modulesInit
+   * @type method
+   * @description Initialize modules (classroom, calendar etc.)
+   */
+  modulesInit() {
+    try {
       this.classroom = google.classroom({
         version: 'v1',
-        auth: this.oAuth2Client,
+        auth: this.client,
       });
 
       this.calendar = google.calendar({
         version: 'v3',
-        auth: this.oAuth2Client,
+        auth: this.client,
       });
     } catch (error) {
-      console.error('Error gettin the credentials:\n', error);
+      console.error('Error modules init:\n', error);
     }
   }
 
@@ -71,17 +101,18 @@ class Client {
   /**
    * @name authorize
    * @type method
-   * @description Read the token data and set it into oAuth2Client credentials
+   * @description Read the token data and set it into authorize credentials
    */
   async authorize() {
+    // TODO: Create the ppolymorphic authorize method
     try {
       try {
         const token = await this.getFileData(this.tokenFilePath);
-        this.oAuth2Client.setCredentials(token);
+        this.client.setCredentials(token);
       } catch (error) {
         await this.getNewToken();
         const token = await this.getFileData(this.tokenFilePath);
-        this.oAuth2Client.setCredentials(token);
+        this.client.setCredentials(token);
       }
     } catch (error) {
       console.error('Authorization error:\n', error);
@@ -89,7 +120,7 @@ class Client {
   }
 
   /**
-   * Get and store new token after prompting for user authorization
+   * Get and store new token after prompting for user oAuth2Client authorization
    *
    * @name getNewToken
    * @type method
@@ -97,7 +128,7 @@ class Client {
    * @returns {Promise}
    */
   async getNewToken() {
-    const authUrl = this.oAuth2Client.generateAuthUrl({
+    const authUrl = this.client.generateAuthUrl({
       access_type: 'offline',
       scope: this.scope,
     });
@@ -114,7 +145,7 @@ class Client {
         rl.close();
         try {
           const token = JSON.stringify(
-            (await this.oAuth2Client.getToken(code)).tokens,
+            (await this.client.getToken(code)).tokens,
           );
           await fs.writeFile(this.tokenFilePath, token);
           console.log('Token stored into ', this.tokenFilePath);
