@@ -3,6 +3,10 @@
 MechaCation - serverside SDK for online education using Google Services (Classroom and Calendar). Made by [NikolasMelui][nikolasmelui].
 Depends on [googleapis][googleapis], [eslint][eslint], [prettier][prettier], [lint-staged][lint-staged], [husky][husky] and [nodemon][nodemon] onboard.
 
+## Node 14+
+
+The project using the 14+ NodeJS version!
+
 ## Config
 
 All necessary configs is in the `config.js` file. You need to create last one or copy `config.example.js` to the `config.js` and use it!
