@@ -10,4 +10,4 @@ npm-debug.log*
 /src/config.js
 /src/google-secrets/credentials.json
 /src/google-secrets/token.json
-/src/google-secrets/keyFile.json
+/src/google-secrets/service.json
