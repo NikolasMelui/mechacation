@@ -1,0 +1,60 @@
+{
+  "name": "mechacation",
+  "version": "0.0.2",
+  "private": true,
+  "description": "Serverside SDK for online education using Google Services (Classroom and Calendar)",
+  "author": {
+    "name": "nikolasmelui",
+    "email": "slak@samaradom.ru",
+    "url": "https://github.com/nikolasmelui"
+  },
+  "license": "MIT",
+  "keywords": [
+    "http",
+    "node.js",
+    "nodejs",
+    "node",
+    "web"
+  ],
+  "main": "./src/index.js",
+  "scripts": {
+    "start": "node ./src/index.js",
+    "develop": "./node_modules/.bin/nodemon ./src/index.js",
+    "debug": "./node_modules/.bin/nodemon . --inspect ./src/index.js",
+    "eslint": "./node_modules/.bin/eslint ./src/ --max-warnings=0",
+    "eslint:fix": "./node_modules/.bin/eslint ./src/ --fix",
+    "prettier": "./node_modules/.bin/prettier ./src/ --write",
+    "test": "node ./src/tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NikolasMelui/mechacation.git"
+  },
+  "bugs": {
+    "url": "https://github.com/NikolasMelui/mechacation/issues"
+  },
+  "homepage": "https://github.com/nikolasmelui/mechacation",
+  "engines": {
+    "node": ">=14.4.0"
+  },
+  "devDependencies": {
+    "eslint": "^7.3.1",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-plugin-prettier": "^3.1.4",
+    "husky": "^4.2.5",
+    "lint-staged": "^10.2.2",
+    "prettier": "^2.0.5",
+    "nodemon": "^2.0.4"
+  },
+  "eslint.packageManager": "npm",
+  "lint-staged": {
+    "*.js": [
+      "npm run eslint",
+      "npm run prettier",
+      "npm test"
+    ]
+  },
+  "dependencies": {
+    "googleapis": "^52.1.0"
+  }
+}
