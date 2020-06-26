@@ -167,15 +167,6 @@ class Client {
       console.error('The API returned an error: ' + error);
     }
   }
-
-  // async createCourse(courseData) {
-  //   try {
-  //     const result = await this.classroom.courses.create(courseData);
-  //     console.log(result);
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
-  // }
 }
 
 module.exports = Client;
