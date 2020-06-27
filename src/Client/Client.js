@@ -24,46 +24,56 @@ class Client {
     this.serviceFilePath = path.resolve(this.secretsPath, 'service.json');
     this.tokenFilePath = path.resolve(this.secretsPath, 'token.json');
     this.scope = clientConfig.scope;
-    this.client = null;
+
+    // Immutable after initialize (can be changed, but not overrided)
+    this.authClient = null;
   }
 
   /**
-   * @name oAuth2ClientInit
+   * @name init
    * @type method
-   * @description Initialize the oAuth2Client of the instance
+   * @description Initialize the chain of auth client and methods
    */
-  async oAuth2ClientInit() {
-    try {
-      const credentials = await this.getFileData(this.credentialsFilePath);
+  init() {
+    return {
+      /**
+       * @name oAuth2
+       * @type method
+       * @description Initialize the authClient as oAuth2 auth client
+       */
+      oAuth2: async () => {
+        // Check the override
+        if (this.authClient !== null) return;
+        try {
+          const credentials = await this.getFileData(this.credentialsFilePath);
+          const {
+            client_id,
+            client_secret,
+            redirect_uris,
+          } = credentials.installed;
+          this.authClient = new google.auth.OAuth2(
+            client_id,
+            client_secret,
+            redirect_uris[0],
+          );
+          this.modulesInit();
+        } catch (error) {
+          console.error('Error gettin the credentials:\n', error);
+        }
+      },
 
-      const { client_id, client_secret, redirect_uris } = credentials.installed;
-
-      this.client = new google.auth.OAuth2(
-        client_id,
-        client_secret,
-        redirect_uris[0],
-      );
-
-      this.modulesInit();
-    } catch (error) {
-      console.error('Error gettin the credentials:\n', error);
-    }
-  }
-
-  /**
-   * @name serviceClientInit
-   * @type method
-   * @description Initialize the ServiceClient of the instance
-   */
-  async serviceClientInit() {
-    try {
-      // TODO: Service client init
-      this.client = null;
-
-      this.modulesInit();
-    } catch (error) {
-      console.error('Error gettin the credentials:\n', error);
-    }
+      /**
+       * @name serviceAccount
+       * @type method
+       * @description Initialize the authClient as Service Account auth client
+       */
+      serviceAccount: async () => {
+        // Check the override
+        if (this.authClient !== null) return;
+        this.authClient = null;
+        this.modulesInit();
+      },
+    };
   }
 
   /**
@@ -75,12 +85,12 @@ class Client {
     try {
       this.classroom = google.classroom({
         version: 'v1',
-        auth: this.client,
+        auth: this.authClient,
       });
 
       this.calendar = google.calendar({
         version: 'v3',
-        auth: this.client,
+        auth: this.authClient,
       });
     } catch (error) {
       console.error('Error modules init:\n', error);
@@ -108,54 +118,39 @@ class Client {
     try {
       try {
         const token = await this.getFileData(this.tokenFilePath);
-        this.client.setCredentials(token);
+        this.authClient.setCredentials(token);
       } catch (error) {
-        await this.getNewToken();
+        const authUrl = this.authClient.generateAuthUrl({
+          access_type: 'offline',
+          scope: this.scope,
+        });
+        console.log('Authorize this app by visiting this url:', authUrl);
+        const rl = readline.createInterface({
+          input: process.stdin,
+          output: process.stdout,
+        });
+        await new Promise((resolve, reject) => {
+          rl.question('Enter the code from that page here: ', async (code) => {
+            rl.close();
+            try {
+              const token = JSON.stringify(
+                (await this.authClient.getToken(code)).tokens,
+              );
+              await fs.writeFile(this.tokenFilePath, token);
+              console.log('Token stored into ', this.tokenFilePath);
+              resolve();
+            } catch (error) {
+              console.error('Error retrieving access token', error);
+              reject(error);
+            }
+          });
+        });
         const token = await this.getFileData(this.tokenFilePath);
-        this.client.setCredentials(token);
+        this.authClient.setCredentials(token);
       }
     } catch (error) {
       console.error('Authorization error:\n', error);
     }
-  }
-
-  /**
-   * Get and store new token after prompting for user oAuth2Client authorization
-   *
-   * @name getNewToken
-   * @type method
-   * @description Get and store new token after prompting for user authorization
-   * @returns {Promise}
-   */
-  async getNewToken() {
-    const authUrl = this.client.generateAuthUrl({
-      access_type: 'offline',
-      scope: this.scope,
-    });
-
-    console.log('Authorize this app by visiting this url:', authUrl);
-
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
-
-    return new Promise((resolve, reject) => {
-      rl.question('Enter the code from that page here: ', async (code) => {
-        rl.close();
-        try {
-          const token = JSON.stringify(
-            (await this.client.getToken(code)).tokens,
-          );
-          await fs.writeFile(this.tokenFilePath, token);
-          console.log('Token stored into ', this.tokenFilePath);
-          resolve();
-        } catch (error) {
-          console.error('Error retrieving access token', error);
-          reject(error);
-        }
-      });
-    });
   }
 
   /**

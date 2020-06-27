@@ -11,7 +11,7 @@ const { SCOPES } = require('./secrets/config');
   try {
     const clientConfig = new ClientConfig(SCOPES);
     const client = new Client(clientConfig);
-    await client.oAuth2ClientInit();
+    await client.init().oAuth2();
     await client.authorize();
 
     const courses = await client.getCourses();
